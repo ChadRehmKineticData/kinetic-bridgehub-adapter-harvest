@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -194,10 +195,13 @@ public class HarvestAdapter implements BridgeAdapter {
         }
         obj.keySet().removeAll(removeKeySet);
         
+        Object[] keys = obj.keySet().toArray();
+        JSONObject convertedObj = convertValues(obj,keys);
+        
         // Create a Record object from the responce JSONObject
         Record record;
-        if (obj != null) {
-            record = new Record(obj);
+        if (convertedObj != null) {
+            record = new Record(convertedObj);
         } else {
             record = new Record();
         }
@@ -244,19 +248,23 @@ public class HarvestAdapter implements BridgeAdapter {
             JSONObject firstObj = (JSONObject)objects.get(0);
 
             propertyName = getPropertyName(firstObj);
-        
+            JSONObject keysObj = null;
             // If no keys where provided to the search then we return all properties
             if(fields.isEmpty()){
-                JSONObject keysObj = (JSONObject)(firstObj).get(propertyName);
+                keysObj = (JSONObject)(firstObj).get(propertyName);
                 fields.addAll(keysObj.keySet());
             }
             
+            Object[] keys =  keysObj.keySet().toArray();
+            
             // Iterate through the responce objects and make a new Record for each.
-            for (Object o : objects) { 
+            for (Object o : objects) {
                 JSONObject object = (JSONObject)((JSONObject)o).get(propertyName);
+
+                JSONObject convertedObj = convertValues(object,keys);
                 Record record;
-                if (object != null) {
-                    record = new Record(object);
+                if (convertedObj != null) {
+                    record = new Record(convertedObj);
                 } else {
                     record = new Record();
                 }
@@ -440,5 +448,16 @@ public class HarvestAdapter implements BridgeAdapter {
            throw new BridgeError("Only one key is valid from responce object.");
         }
         return key;
+    }
+ 
+    private JSONObject convertValues(JSONObject obj,Object[] keys){
+        for (Object key : keys){
+            Object value = obj.get((String)key);
+            if (!(value instanceof String)) {
+                logger.trace("Converting: " + String.valueOf(value) + " to a string");
+                obj.put((String)key, String.valueOf(value));
+            }
+        } 
+        return obj;
     }
 }
