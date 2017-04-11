@@ -248,14 +248,12 @@ public class HarvestAdapter implements BridgeAdapter {
             JSONObject firstObj = (JSONObject)objects.get(0);
 
             propertyName = getPropertyName(firstObj);
-            JSONObject keysObj = null;
+            JSONObject keysObj = (JSONObject)(firstObj).get(propertyName);
+            Object[] keys = keysObj.keySet().toArray();
             // If no keys where provided to the search then we return all properties
             if(fields.isEmpty()){
-                keysObj = (JSONObject)(firstObj).get(propertyName);
                 fields.addAll(keysObj.keySet());
             }
-            
-            Object[] keys =  keysObj.keySet().toArray();
             
             // Iterate through the responce objects and make a new Record for each.
             for (Object o : objects) {
