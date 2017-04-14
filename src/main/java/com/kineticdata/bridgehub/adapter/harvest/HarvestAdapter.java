@@ -111,7 +111,7 @@ public class HarvestAdapter implements BridgeAdapter {
     // attempting to call is valid
     // TODO: should we add "Contacts", "Invoices", "Expenses", ,"Daily"(Time Enteries), "Projects"(Time Report), "Projects"(Expense Report)
     public static final List<String> VALID_STRUCTURES = Arrays.asList(new String[] {
-        "Clients","Projects","Tasks","Task Assignments","Users","User Assignments"
+        "Clients","Projects","Tasks","Task Assignments","Users","User Assignments","Entries"
     });
     
     /*---------------------------------------------------------------------------------------------
@@ -328,6 +328,24 @@ public class HarvestAdapter implements BridgeAdapter {
             }else{
                 throw new BridgeError("A project_id is required for the Task Assignmenets structure");
             }
+        }else if(structure.equals("Entries")){
+            if(queryMap.containsKey("project_id") && queryMap.containsKey("user_id")){
+                throw new BridgeError("A project_id or user_id can be provieded but not both");
+            }else if(queryMap.containsKey("project_id") || queryMap.containsKey("user_id")){
+                if(queryMap.containsKey("from") && queryMap.containsKey("to")){
+                    if(queryMap.containsKey("project_id")){
+                        url += "/projects/"+queryMap.get("project_id")+"/entries";
+                        queryMap.remove("project_id");
+                    }else if( queryMap.containsKey("project_id")){
+                        url += "/people/"+queryMap.get("user_id")+"/entries";
+                        queryMap.remove("user_id");
+                    }
+                }else{
+                    throw new BridgeError("A date range must be provided with the format of from=YYYYMMDD&to=YYYYMMDD");
+                }
+            }else{
+                throw new BridgeError("A project_id or user_id is required for the Entries structure");
+            }
         }else if(structure.equals("Users")){
             url += "/people";
         }else{ // This option is for the User Assignments Structure
@@ -386,7 +404,7 @@ public class HarvestAdapter implements BridgeAdapter {
             }else{
                 throw new BridgeError("A user_id is required to retrieve a user");
             }
-        }else{ // This option is for the User Assignment Structure
+        }else if(structure.equals("Users Assignment")){
             if(queryMap.containsKey("project_id") && queryMap.containsKey("user_assignment_id")){
                 url += "/projects/"+queryMap.get("project_id")+"/user_assignments"+queryMap.get("user_assignment_id");
                 queryMap.remove("project_id");
@@ -394,6 +412,8 @@ public class HarvestAdapter implements BridgeAdapter {
             }else{
                 throw new BridgeError("A project_id and user_assignment_id are required to retrieve users assignment");
             }
+        }else{
+            throw new BridgeError("The " + structure + " structure does not have a retrieve option");
         }
         logger.trace("Retrieve url: "+url);
         return url;
