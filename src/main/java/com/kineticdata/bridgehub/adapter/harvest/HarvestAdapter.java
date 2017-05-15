@@ -3,7 +3,6 @@ package com.kineticdata.bridgehub.adapter.harvest;
 import com.kineticdata.bridgehub.adapter.BridgeAdapter;
 import com.kineticdata.bridgehub.adapter.BridgeError;
 import com.kineticdata.bridgehub.adapter.BridgeRequest;
-import com.kineticdata.bridgehub.adapter.BridgeUtils;
 import com.kineticdata.bridgehub.adapter.Count;
 import com.kineticdata.bridgehub.adapter.Record;
 import com.kineticdata.bridgehub.adapter.RecordList;
@@ -20,9 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -31,6 +27,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HarvestAdapter implements BridgeAdapter {
@@ -39,16 +36,16 @@ public class HarvestAdapter implements BridgeAdapter {
      *--------------------------------------------------------------------------------------------*/
     
     /** Defines the adapter display name */
-    public static final String NAME = "Harvest Application Bridge";
+    public static final String NAME = "Harvest Bridge";
     
     /** Defines the logger */
-    protected static final org.slf4j.Logger logger = LoggerFactory.getLogger(HarvestAdapter.class);
+    protected static final Logger logger = LoggerFactory.getLogger(HarvestAdapter.class);
     
     /** Defines the collection of property names for the adapter */
     public static class Properties {
         public static final String PROPERTY_USERNAME = "Username";
         public static final String PROPERTY_PASSWORD = "Password";
-        public static final String PROPERTY_HARVEST_ACCOUNT = "Your Harvest App Account";
+        public static final String PROPERTY_HARVEST_ACCOUNT = "Account Name";
 
     }
     
@@ -56,6 +53,7 @@ public class HarvestAdapter implements BridgeAdapter {
         new ConfigurableProperty(Properties.PROPERTY_USERNAME).setIsRequired(true),
         new ConfigurableProperty(Properties.PROPERTY_PASSWORD).setIsRequired(true).setIsSensitive(true),
         new ConfigurableProperty(Properties.PROPERTY_HARVEST_ACCOUNT).setIsRequired(true)
+            .setDescription("")
     );
 
     // Local variables to store the property values in
