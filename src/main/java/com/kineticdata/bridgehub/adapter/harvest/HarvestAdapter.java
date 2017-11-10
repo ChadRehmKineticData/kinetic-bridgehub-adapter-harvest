@@ -22,7 +22,7 @@ import java.util.Set;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -34,13 +34,13 @@ public class HarvestAdapter implements BridgeAdapter {
     /*----------------------------------------------------------------------------------------------
      * PROPERTIES
      *--------------------------------------------------------------------------------------------*/
-    
+
     /** Defines the adapter display name */
     public static final String NAME = "Harvest Bridge";
-    
+
     /** Defines the logger */
     protected static final Logger logger = LoggerFactory.getLogger(HarvestAdapter.class);
-    
+
     /** Defines the collection of property names for the adapter */
     public static class Properties {
         public static final String PROPERTY_USERNAME = "Username";
@@ -48,7 +48,7 @@ public class HarvestAdapter implements BridgeAdapter {
         public static final String PROPERTY_HARVEST_ACCOUNT = "Account Name";
 
     }
-    
+
     private final ConfigurablePropertyMap properties = new ConfigurablePropertyMap(
         new ConfigurableProperty(Properties.PROPERTY_USERNAME).setIsRequired(true),
         new ConfigurableProperty(Properties.PROPERTY_PASSWORD).setIsRequired(true).setIsSensitive(true),
@@ -61,11 +61,11 @@ public class HarvestAdapter implements BridgeAdapter {
     private String password;
     private String harvestAccount;
     private String harvestEndpoint;
-    
+
     /*---------------------------------------------------------------------------------------------
      * SETUP METHODS
      *-------------------------------------------------------------------------------------------*/
-    
+
     @Override
     public void initialize() throws BridgeError {
         // Initializing the variables with the property values that were passed
@@ -81,28 +81,28 @@ public class HarvestAdapter implements BridgeAdapter {
     public String getName() {
         return NAME;
     }
-    
+
     @Override
     public String getVersion() {
-        // Bridgehub uses this version instead of the Maven version when 
+        // Bridgehub uses this version instead of the Maven version when
         // displaying it in the console
-        return "1.0.0";
+        return "1.0.0-SNAPSHOT";
     }
-    
+
     @Override
     public void setProperties(Map<String,String> parameters) {
         // This should always be the same unless there are special circumstances
         // for changing it
         properties.setValues(parameters);
     }
-    
+
     @Override
     public ConfigurablePropertyMap getProperties() {
         // This should always be the same unless there are special circumstances
         // for changing it
         return properties;
     }
-    
+
     // Structures that are valid to use in the bridge. Used to check against
     // when a method is called to make sure that the Structure the user is
     // attempting to call is valid
@@ -110,7 +110,7 @@ public class HarvestAdapter implements BridgeAdapter {
     public static final List<String> VALID_STRUCTURES = Arrays.asList(new String[] {
         "Clients","Projects","Tasks","Task Assignments","Users","User Assignments"
     });
-    
+
     /*---------------------------------------------------------------------------------------------
      * IMPLEMENTATION METHODS
      *-------------------------------------------------------------------------------------------*/
@@ -121,26 +121,26 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("Counting records");
         logger.trace("  Structure: " + request.getStructure());
         logger.trace("  Query: " + request.getQuery());
-        
+
         // Check if the inputted structure is valid
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         // Parse the query and exchange out any parameters with their parameter values
         HarvestQualificationParser parser = new HarvestQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
-       
+
         // Retrieve the objects based on the structure from the source
         String output = getResource(buildSearchUrl(request.getStructure(),query));
         logger.trace("Count Output: "+output);
 
         // Parse the response string into a JSONObject
         JSONArray objects = (JSONArray)JSONValue.parse(output);
-        
+
         // Get the number of elements in the returned array
         Integer count = objects.size();
-        
+
         // Create and return a count object that contains the count
         return new Count(count);
     }
@@ -152,12 +152,12 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("  Structure: " + request.getStructure());
         logger.trace("  Query: " + request.getQuery());
         logger.trace("  Fields: " + request.getFieldString());
-        
+
         // Check if the inputted structure is valid
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         // Parse the query and exchange out any parameters with their parameter values
         HarvestQualificationParser parser = new HarvestQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
@@ -165,21 +165,21 @@ public class HarvestAdapter implements BridgeAdapter {
         // Retrieve the objects based on the structure from the source
         String output = getResource(buildRetrieveUrl(request.getStructure(),query));
         logger.trace("Retrieve Output: "+output);
-        
+
         // Parse the response string into a JSONObject
         JSONObject object = (JSONObject)JSONValue.parse(output);
-        
+
         List<String> fields = request.getFields();
-        if (fields == null) { 
+        if (fields == null) {
             fields = new ArrayList();
         }
-        
+
         // If no keys where provided to the search then we return all properties
         JSONObject obj = (JSONObject)(object).get(getPropertyName(object));
         if(fields.isEmpty()){
             fields.addAll(obj.keySet());
         }
-        
+
         // If specific fields were specified then we remove all of the nonspecified properties from the object.
         Set<Object> removeKeySet = new HashSet<Object>();
         for(Object key: obj.keySet()){
@@ -191,7 +191,7 @@ public class HarvestAdapter implements BridgeAdapter {
             }
         }
         obj.keySet().removeAll(removeKeySet);
-        
+
         // Create a Record object from the responce JSONObject
         Record record;
         if (obj != null) {
@@ -199,7 +199,7 @@ public class HarvestAdapter implements BridgeAdapter {
         } else {
             record = new Record();
         }
-        
+
         // Return the created Record object
         return record;
     }
@@ -211,16 +211,16 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("  Structure: " + request.getStructure());
         logger.trace("  Query: " + request.getQuery());
         logger.trace("  Fields: " + request.getFieldString());
-        
+
         // Check if the inputted structure is valid
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
             throw new BridgeError("Invalid Structure: '" + request.getStructure() + "' is not a valid structure");
         }
-        
+
         // Parse the query and exchange out any parameters with their parameter values
         HarvestQualificationParser parser = new HarvestQualificationParser();
         String query = parser.parse(request.getQuery(),request.getParameters());
-        
+
         // Retrieve the objects based on the structure from the source
         String output = getResource(buildSearchUrl(request.getStructure(),query));
         logger.trace("Search Output: "+output);
@@ -230,10 +230,10 @@ public class HarvestAdapter implements BridgeAdapter {
 
         // Create a List of records that will be used to make a RecordList object
         List<Record> recordList = new ArrayList<Record>();
-        
+
         // If the user doesn't enter any values for fields we return all of the fields
         List<String> fields = request.getFields();
-        if (fields == null) { 
+        if (fields == null) {
             fields = new ArrayList();
         }
 
@@ -242,15 +242,15 @@ public class HarvestAdapter implements BridgeAdapter {
             JSONObject firstObj = (JSONObject)objects.get(0);
 
             propertyName = getPropertyName(firstObj);
-        
+
             // If no keys where provided to the search then we return all properties
             if(fields.isEmpty()){
                 JSONObject keysObj = (JSONObject)(firstObj).get(propertyName);
                 fields.addAll(keysObj.keySet());
             }
-            
+
             // Iterate through the responce objects and make a new Record for each.
-            for (Object o : objects) { 
+            for (Object o : objects) {
                 JSONObject object = (JSONObject)((JSONObject)o).get(propertyName);
                 Record record;
                 if (object != null) {
@@ -262,11 +262,11 @@ public class HarvestAdapter implements BridgeAdapter {
                 recordList.add(record);
             }
         }
-        
+
         // Return the RecordList object
         return new RecordList(fields, recordList);
     }
-    
+
     /*----------------------------------------------------------------------------------------------
      * HELPER METHODS
      *--------------------------------------------------------------------------------------------*/
@@ -284,26 +284,28 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("Query String: "+queryStr);
         return queryStr;
     }
-    
+
     // Build a map of queries from the request.  Some of the queries will be used to build the url and some will get passed on to harvest.
     private Map<String,String> getQueryMap(String query) throws BridgeError {
         Map<String,String> queryMap = new HashMap<String,String>();
-        String[] qSplit = query.split("&");
-        for (int i=0;i<qSplit.length;i++) {
-            String qPart = qSplit[i];
-            String[] keyValuePair = qPart.split("=");
-            String key = keyValuePair[0].trim();
-            if(queryMap.containsKey(key)){
-              throw new BridgeError("A query can only contain one "+key+" parameter.");
+        if (query != null && !query.isEmpty()) {
+            String[] qSplit = query.split("&");
+            for (int i=0;i<qSplit.length;i++) {
+                String qPart = qSplit[i];
+                String[] keyValuePair = qPart.split("=");
+                String key = keyValuePair[0].trim();
+                if(queryMap.containsKey(key)){
+                  throw new BridgeError("A query can only contain one "+key+" parameter.");
+                }
+                String value = keyValuePair.length > 1 ? keyValuePair[1].trim() : "";
+                logger.trace("Query Map Key: "+key+" Value: "+value);
+                queryMap.put(key,value);
             }
-            String value = keyValuePair.length > 1 ? keyValuePair[1].trim() : "";
-            logger.trace("Query Map Key: "+key+" Value: "+value);
-            queryMap.put(key,value);
         }
         return queryMap;
     }
-    
-    // Each Structure requires it's own specific url and some require that a query parameter be passed in. 
+
+    // Each Structure requires it's own specific url and some require that a query parameter be passed in.
     private String buildSearchUrl(String structure, String query) throws BridgeError{
         Map<String,String> queryMap = getQueryMap(query);
         String url = this.harvestEndpoint;
@@ -354,8 +356,8 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("Search url: "+url);
         return url;
     }
-    
-    // Each Structure requires it's own specific url and some require that a query parameter be passed in. 
+
+    // Each Structure requires it's own specific url and some require that a query parameter be passed in.
     private String buildRetrieveUrl(String structure, String query) throws BridgeError{
         Map<String,String> queryMap = getQueryMap(query);
         String url = this.harvestEndpoint;
@@ -410,11 +412,11 @@ public class HarvestAdapter implements BridgeAdapter {
         logger.trace("Retrieve url: "+url);
         return url;
     }
-    
+
     // Count Search and Retrieve get the resoucre the same and use the same output object.
     private String getResource(String url) throws BridgeError {
         // Initialize the HTTP Client,Response, and HTTP GET objects
-        HttpClient client = new DefaultHttpClient();
+        HttpClient client = HttpClients.createDefault();
         HttpResponse response;
         HttpGet get = new HttpGet(url);
 
@@ -423,7 +425,7 @@ public class HarvestAdapter implements BridgeAdapter {
         byte[] basicAuthBytes = Base64.encodeBase64(creds.getBytes());
         get.setHeader("Authorization", "Basic " + new String(basicAuthBytes));
         get.setHeader("Accept", "application/json");
-        
+
         // Make the call to the source to retrieve data and convert the response
         // from a HttpEntity object into a Java String
         String output = "";
@@ -438,14 +440,14 @@ public class HarvestAdapter implements BridgeAdapter {
             }else if(responseCode == 401){
                 throw new BridgeError("401 Access on valid.");
             }
-        } 
+        }
         catch (IOException e) {
             logger.error(e.getMessage());
             throw new BridgeError("Unable to make a connection to Kinetic Core.", e);
         }
         return output;
     }
-    
+
     // Each Structure returns an object with a different property accessor name.  This is a generic method to get that name.
     // If the returned object has multiple properties we throw an error.
     private String getPropertyName(JSONObject obj) throws BridgeError {
