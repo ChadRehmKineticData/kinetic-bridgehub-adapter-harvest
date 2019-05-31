@@ -7,6 +7,7 @@ import com.kineticdata.bridgehub.adapter.Record;
 import com.kineticdata.bridgehub.adapter.RecordList;
 import com.kineticdata.bridgehub.adapter.harvest.HarvestAdapter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +28,17 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
     
     @Test
-    public void testCount() throws Exception{
+    public void test_count() throws Exception{
         BridgeError error = null;
-        
-        assertNull(error);
-        
-        // Create the Bridge Request
-        List<String> fields = new ArrayList<String>();
-        fields.add("id");
-        
+
         BridgeRequest request = new BridgeRequest();
+        
+        List<String> fields = Arrays.asList("id");
+        request.setFields(fields);
+        
         request.setStructure("Projects");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("projects");
         
         Count count = null;
         try {
@@ -53,7 +52,35 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
     
     @Test
-    public void testSearch() throws Exception{
+    public void test_count_param() throws Exception{
+        BridgeError error = null;
+
+        BridgeRequest request = new BridgeRequest();
+        
+        List<String> fields = Arrays.asList("id");
+        request.setFields(fields);
+        
+        request.setStructure("Projects");
+        request.setFields(fields);
+        request.setQuery("projects?is_active=<%=parameter[\"Is Active\"]%>");
+        
+        Map parameters = new HashMap();
+        parameters.put("Is Active", "true");
+        request.setParameters(parameters);
+        
+        Count count = null;
+        try {
+            count = getAdapter().count(request);
+        } catch (BridgeError e) {
+            error = e;
+        }
+        
+        assertNull(error);
+        assertTrue(count.getValue() > 0);
+    }
+    
+    @Test
+    public void test_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -66,7 +93,80 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Projects");
         request.setFields(fields);
-        request.setQuery("is_active=true&client_id=2319519");
+        request.setQuery("projects?is_active=<%=parameter[\"Is Active\"]%>"
+                       + "&client_id=<%=parameter[\"Client Id\"]%>");
+                
+        Map parameters = new HashMap();
+        parameters.put("Is Active", "true");
+        parameters.put("Client Id", "2319519");
+        request.setParameters(parameters);
+        
+        RecordList list = null;
+        try {
+            list = getAdapter().search(request);
+        } catch (BridgeError e) {
+            error = e;
+        }
+        
+        assertNull(error);
+        assertTrue(list.getRecords().size() > 0);
+    }
+    
+        @Test
+    public void test_search_empty_fields() throws Exception{
+        BridgeError error = null;
+        
+        assertNull(error);
+        
+        BridgeRequest request = new BridgeRequest();
+        request.setStructure("Projects");
+        request.setQuery("projects?is_active=<%=parameter[\"Is Active\"]%>"
+                       + "&client_id=<%=parameter[\"Client Id\"]%>");
+                
+        Map parameters = new HashMap();
+        parameters.put("Is Active", "true");
+        parameters.put("Client Id", "2319519");
+        request.setParameters(parameters);
+        
+        RecordList list = null;
+        try {
+            list = getAdapter().search(request);
+        } catch (BridgeError e) {
+            error = e;
+        }
+        
+        assertNull(error);
+        assertTrue(list.getRecords().size() > 0);
+    }
+    
+        
+    @Test
+    public void test_user_dec_sort() throws Exception{
+        BridgeError error = null;
+        
+        assertNull(error);
+        
+        // Create the Bridge Request
+        List<String> fields = new ArrayList<String>();
+        fields.add("id");
+        fields.add("first_name");
+        
+        BridgeRequest request = new BridgeRequest();
+        request.setStructure("Users");
+        request.setFields(fields);
+        request.setQuery("users?per_page=<%=parameter[\"Per Page\"]%>"
+                       + "&is_active=<%=parameter[\"Is Active\"]%>");
+        
+        Map parameters = new HashMap();
+        parameters.put("Is Active", "false");
+        parameters.put("Per Page", "75");
+        request.setParameters(parameters);
+        
+        Map<String,String> metadata = new HashMap();
+        
+        metadata.put("page", "1");
+        metadata.put("order", "DESC");
+        request.setMetadata(metadata);
         
         RecordList list = null;
         try {
@@ -80,7 +180,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
     
     @Test
-    public void testUserSearch() throws Exception{
+    public void test_user_search_param() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -93,7 +193,13 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Users");
         request.setFields(fields);
-        request.setQuery("per_page=75&is_active=false");
+        request.setQuery("users?per_page=<%=parameter[\"Per Page\"]%>"
+                       + "&is_active=<%=parameter[\"Is Active\"]%>");
+        
+        Map parameters = new HashMap();
+        parameters.put("Is Active", "false");
+        parameters.put("Per Page", "75");
+        request.setParameters(parameters);
         
         Map<String,String> metadata = new HashMap();
         
@@ -113,7 +219,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
         
     @Test
-    public void testClientsSearch() throws Exception{
+    public void test_clients_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -125,7 +231,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Clients");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("clients");
         
         RecordList list = null;
         try {
@@ -139,7 +245,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
      
     @Test
-    public void testTasksSearch() throws Exception{
+    public void test_tasks_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -151,7 +257,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Tasks");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("tasks");
         
         RecordList list = null;
         try {
@@ -165,7 +271,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
  
     @Test
-    public void testTaskAssignmentsSearch() throws Exception{
+    public void test_task_assignments_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -177,7 +283,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Task Assignments");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("task_assignments");
         
         RecordList list = null;
         try {
@@ -191,7 +297,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
 
     @Test
-    public void testUserAssignmentsSearch() throws Exception{
+    public void test_user_assignments_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -203,7 +309,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("User Assignments");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("user_assignments");
         
         RecordList list = null;
         try {
@@ -217,7 +323,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
 
     @Test
-    public void testTimeEntriesSearch() throws Exception{
+    public void test_time_entries_search() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -229,7 +335,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Time Entries");
         request.setFields(fields);
-        request.setQuery("");
+        request.setQuery("time_entries");
         
         RecordList list = null;
         try {
@@ -243,7 +349,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
      
     @Test
-    public void testRetrieve() throws Exception{
+    public void test_retrieve() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -255,7 +361,11 @@ public class HarvestTest extends BridgeAdapterTestBase{
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Projects");
         request.setFields(fields);
-        request.setQuery("project_id=11016819");
+        request.setQuery("projects/<%=parameter[\"Project Id\"]%>");
+        
+        Map parameters = new HashMap();
+        parameters.put("Project Id", "11016819");
+        request.setParameters(parameters);
         
         Record record = null;
         try {
@@ -269,7 +379,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
     }
     
     @Test
-    public void testUserRetrieve() throws Exception{
+    public void test_user_retrieve() throws Exception{
         BridgeError error = null;
         
         assertNull(error);
@@ -279,11 +389,16 @@ public class HarvestTest extends BridgeAdapterTestBase{
         fields.add("id");
         fields.add("first_name");
         fields.add("last_name");
+        fields.add("roles");
         
         BridgeRequest request = new BridgeRequest();
         request.setStructure("Users");
         request.setFields(fields);
-        request.setQuery("user_id=1075388");
+        request.setQuery("users/<%=parameter[\"User Id\"]%>");
+        
+        Map parameters = new HashMap();
+        parameters.put("User Id", "1075388");
+        request.setParameters(parameters);
         
         Record record = null;
         try {

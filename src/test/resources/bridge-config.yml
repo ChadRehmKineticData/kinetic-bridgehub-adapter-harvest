@@ -2,8 +2,6 @@
 # ie. For the property with a label of Username, the configuration will be Username: "test.user"
 # Do this for all of the configuration values
 Bridge Configuration:
-    Username: ""
-    Password: ""
     Access Token: ""
     Account Id: ""
     
