@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -216,10 +217,10 @@ public class HarvestAdapter implements BridgeAdapter {
             logger.trace("  Fields: " + request.getFieldString());
         }
         
-        if (request.getMetadata("order") != null) {    
-            throw new BridgeError("Sort order is not supported by"
-                + " the harvest adpater.");
-        }
+//        if (request.getMetadata("order") != null) {    
+//            throw new BridgeError("Sort order is not supported by"
+//                + " the harvest adpater.");
+//        }
         
         // Check if the inputted structure is valid
         if (!VALID_STRUCTURES.contains(request.getStructure())) {
@@ -239,7 +240,7 @@ public class HarvestAdapter implements BridgeAdapter {
         
         // Parse the response string into a JSONObject
         JSONObject obj = (JSONObject)JSONValue.parse(output);
-
+        
         // Get the array of objects. Each Structure has a different accessor name.
         JSONArray objects = (JSONArray)obj.get(
             request.getStructure().replaceAll(" ", "_").toLowerCase()
@@ -301,8 +302,11 @@ public class HarvestAdapter implements BridgeAdapter {
             }
         }
         
+        Map<String,String> metadata = new LinkedHashMap<String,String>();
+        metadata.put("next_page", String.valueOf(obj.get("next_page")));
+        
         // Return the RecordList object
-        return new RecordList(fields, recordList);
+        return new RecordList(fields, recordList, metadata);
     }
     
     /*--------------------------------------------------------------------------
@@ -324,7 +328,8 @@ public class HarvestAdapter implements BridgeAdapter {
         List<NameValuePair> parameters = parser.parseQuery(queryString);
         
         String url = String.format("%s/%s?%s", this.harvestEndpoint, 
-            parser.parsePath(queryString), buildQuery(parameters));
+            parser.parsePath(queryString), buildQuery(parameters,
+            request.getMetadata()));
         
         // Initialize the HTTP Client,Response, and HTTP GET objects
         HttpClient client = new DefaultHttpClient();
@@ -362,17 +367,19 @@ public class HarvestAdapter implements BridgeAdapter {
         return output;
     }
 
-    protected String buildQuery (List<NameValuePair> parameters) {
+    public String buildQuery (List<NameValuePair> parameters, 
+        Map<String, String> metadata) {
         
         Map<String,NameValuePair> processedParameters = parameters.stream()
-            .map(parameter -> {
-                NameValuePair result;
-
-                result = parameter;
-
-                return result;
-            })
             .collect(Collectors.toMap(item -> item.getName(), item -> item));
+        
+        if (metadata != null) {
+            metadata.forEach((key, value) -> {
+                if(!key.equals("order")) {
+                    processedParameters.putIfAbsent(key, new BasicNameValuePair(key,value));
+                }
+            });
+        }
         
         return URLEncodedUtils.format(processedParameters.values(),
             Charset.forName("UTF-8"));

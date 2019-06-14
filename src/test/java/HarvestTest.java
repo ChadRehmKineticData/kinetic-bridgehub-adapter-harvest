@@ -9,8 +9,13 @@ import com.kineticdata.bridgehub.adapter.harvest.HarvestAdapter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -217,7 +222,7 @@ public class HarvestTest extends BridgeAdapterTestBase{
         assertNull(error);
         assertTrue(list.getRecords().size() > 0);
     }
-        
+    
     @Test
     public void test_clients_search() throws Exception{
         BridgeError error = null;
@@ -244,6 +249,67 @@ public class HarvestTest extends BridgeAdapterTestBase{
         assertTrue(list.getRecords().size() > 0);
     }
      
+    @Test
+    public void test_clients_metadata() throws Exception{
+        BridgeError error = null;
+        
+        assertNull(error);
+        
+        // Create the Bridge Request
+        List<String> fields = new ArrayList<String>();
+        fields.add("id");
+        
+        BridgeRequest request = new BridgeRequest();
+        request.setStructure("Clients");
+        request.setFields(fields);
+        request.setQuery("clients");
+        
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("order", "<%=field[\"client\"]%>:ASC,<%=field[\"id\"]%>:ASC,<%=field[\"project\"]%>:DESC");
+        metadata.put("page","2");
+        request.setMetadata(metadata);
+        
+        RecordList list = null;
+        try {
+            list = getAdapter().search(request);
+        } catch (BridgeError e) {
+            error = e;
+        }
+        
+        assertNull(error);
+        assertTrue(list.getRecords().size() > 0);
+    }
+    
+    @Test
+    public void test_metadata_last_page() throws Exception{
+        BridgeError error = null;
+        
+        assertNull(error);
+        
+        // Create the Bridge Request
+        List<String> fields = new ArrayList<String>();
+        fields.add("id");
+        
+        BridgeRequest request = new BridgeRequest();
+        request.setStructure("Clients");
+        request.setFields(fields);
+        request.setQuery("clients");
+        
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("page","3");
+        request.setMetadata(metadata);
+        
+        RecordList list = null;
+        try {
+            list = getAdapter().search(request);
+        } catch (BridgeError e) {
+            error = e;
+        }
+        
+        assertNull(error);
+        assertTrue(list.getRecords().size() > 0);
+    }
+    
     @Test
     public void test_tasks_search() throws Exception{
         BridgeError error = null;
@@ -409,5 +475,22 @@ public class HarvestTest extends BridgeAdapterTestBase{
         
         assertNull(error);
         assertTrue(record.getRecord().containsKey("id"));
+    }
+    
+    @Test
+    public void test_build_query() throws Exception{
+        
+        HarvestAdapter adapter = new HarvestAdapter();
+          
+        Map<String,String> metadata = new HashMap();
+        metadata.put("page", "1");
+        
+        List<NameValuePair> parameters = new ArrayList<NameValuePair>();
+        parameters.add(new BasicNameValuePair("page", "2"));
+        parameters.add(new BasicNameValuePair("is_active", "true"));
+          
+        String encodedUrl = adapter.buildQuery(parameters, metadata);
+        
+        assertEquals("is_active=true&page=2", encodedUrl);
     }
 }

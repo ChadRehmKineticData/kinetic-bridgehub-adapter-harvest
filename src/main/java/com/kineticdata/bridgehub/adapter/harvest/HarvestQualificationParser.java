@@ -4,7 +4,6 @@ import com.kineticdata.bridgehub.adapter.QualificationParser;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.slf4j.LoggerFactory;
